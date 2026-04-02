@@ -13,6 +13,18 @@ export default function App() {
 
   useEffect(() => {
     socket.current = connectWS();
+
+    socket.current.on("connect", () => {
+      console.log("socket connection established!", socket.current.id);
+
+      socket.current.on("notifyUserAddition", (userName) => {
+        console.log(`${userName} joined the chat`);
+      });
+    });
+
+    return () => {
+      socket.current?.disconnect();
+    };
   }, []);
 
   function formatTime(ts) {
@@ -26,8 +38,10 @@ export default function App() {
     e.preventDefault();
     const trimmed = inputName.trim();
     if (!trimmed) return;
+
     setUserName(trimmed);
     setShowNamePopup(false);
+    socket.current?.emit("joinRoom", trimmed);
   }
 
   function sendMessage() {
@@ -119,7 +133,7 @@ export default function App() {
                         : "bg-white text-[#303030] rounded-bl-2xl"
                     }`}
                   >
-                    <div className="break-words whitespace-pre-wrap">
+                    <div className="wrap-break-word whitespace-pre-wrap">
                       {m.text}
                     </div>
                     <div className="flex justify-between items-center mt-1 gap-16">

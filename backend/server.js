@@ -15,9 +15,21 @@ app.get("/", (req, res) => {
   res.send("<p>Server is running...</p>");
 });
 
+const ROOM = "GroupChat";
 // Websocket
 io.on("connection", (socket) => {
-  console.log("User connected!", socket.id);
+  console.log("socket connection established!", socket.id);
+
+  socket.on("joinRoom", async (userName) => {
+    await socket.join(ROOM);
+    console.log(`${userName} joined the chat`);
+
+    // send to all in the room including the one who joined
+    // io.to(ROOM).emit("notifyUserAddition", userName);
+
+    // send to all except the one who joined
+    socket.to(ROOM).emit("notifyUserAddition", userName);
+  });
 });
 
 server.listen(4600, () => {
