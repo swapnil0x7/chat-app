@@ -5,10 +5,12 @@ import { connectWS } from "./ws";
 
 export default function App() {
   const socket = useRef(null);
+  const timer = useRef(null);
   const [userName, setUserName] = useState("");
   const [showNamePopup, setShowNamePopup] = useState(true);
   const [inputName, setInputName] = useState("");
   const [messages, setMessages] = useState([]);
+  const [typers, setTypers] = useState([]);
   const [text, setText] = useState("");
 
   useEffect(() => {
@@ -17,8 +19,29 @@ export default function App() {
     socket.current.on("connect", () => {
       console.log("socket connection established!", socket.current.id);
 
+      // JOIN ROOM
       socket.current.on("notifyUserAddition", (userName) => {
         console.log(`${userName} joined the chat`);
+      });
+
+      // CHAT MESSAGE
+      socket.current.on("newMessage", (msg) => {
+        console.log(`new messsage: `, msg);
+        // Add the new message to the message list
+        setMessages((prev) => [...prev, msg]);
+      });
+
+      // TYPING
+      socket.current.on("typing", (username) => {
+        setTypers((prev) => {
+          if (prev.includes(username)) return prev;
+          return [...prev, username];
+        });
+      });
+
+      // STOP TYPING
+      socket.current.on("stopTyping", (username) => {
+        setTypers((prev) => prev.filter((item) => item !== username));
       });
     });
 
@@ -26,6 +49,18 @@ export default function App() {
       socket.current?.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (text) {
+      socket.current.emit("typing", userName);
+
+      clearTimeout(timer.current);
+
+      timer.current = setTimeout(() => {
+        socket.current.emit("stopTyping", userName);
+      }, 700);
+    }
+  }, [text]);
 
   function formatTime(ts) {
     const d = new Date(ts);
@@ -55,6 +90,7 @@ export default function App() {
       ts: Date.now(),
     };
     setMessages((m) => [...m, msg]);
+    socket.current.emit("chatMessage", msg);
     setText("");
   }
 
@@ -108,6 +144,14 @@ export default function App() {
               <div className="text-sm font-medium text-[#303030]">
                 Realtime group chat
               </div>
+              {typers.length ? (
+                <div className="text-xs text-gray-500">
+                  {typers.join(", ")} {typers.length > 1 ? "are" : "is"}{" "}
+                  typing...
+                </div>
+              ) : (
+                ""
+              )}
             </div>
             <div className="text-sm text-gray-500">
               Signed in as{" "}

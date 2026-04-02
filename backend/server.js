@@ -20,6 +20,7 @@ const ROOM = "GroupChat";
 io.on("connection", (socket) => {
   console.log("socket connection established!", socket.id);
 
+  // JOIN ROOM
   socket.on("joinRoom", async (userName) => {
     await socket.join(ROOM);
     console.log(`${userName} joined the chat`);
@@ -27,8 +28,26 @@ io.on("connection", (socket) => {
     // send to all in the room including the one who joined
     // io.to(ROOM).emit("notifyUserAddition", userName);
 
-    // send to all except the one who joined
+    // (Broadcast) send to all except the one who joined
     socket.to(ROOM).emit("notifyUserAddition", userName);
+  });
+
+  // CHAT MESSAGE
+  socket.on("chatMessage", (msg) => {
+    // Broadcast
+    socket.to(ROOM).emit("newMessage", msg);
+  });
+
+  // TYPING
+  socket.on("typing", (userName) => {
+    // Broadcast
+    socket.to(ROOM).emit("typing", userName);
+  });
+
+  // STOP TYPING
+  socket.on("stopTyping", (userName) => {
+    // Broadcast
+    socket.to(ROOM).emit("stopTyping", userName);
   });
 });
 
