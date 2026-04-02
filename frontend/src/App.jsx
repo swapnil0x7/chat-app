@@ -55,11 +55,12 @@ export default function App() {
       socket.current.emit("typing", userName);
 
       clearTimeout(timer.current);
-
-      timer.current = setTimeout(() => {
-        socket.current.emit("stopTyping", userName);
-      }, 700);
     }
+
+    // Make sure you keep it out of above if block
+    timer.current = setTimeout(() => {
+      socket.current.emit("stopTyping", userName);
+    }, 700);
   }, [text]);
 
   function formatTime(ts) {
